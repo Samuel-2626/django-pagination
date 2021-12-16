@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+    <title>Pagination in Django</title>
+
+    <style>
+      * {
+        font-family: Georgia, 'Times New Roman', Times, serif;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="text-center">List of Employees</h1>
+      <hr>
+      <ul class="list-group list-group-flush">
+        {% for employee in employees %}
+          <li class="list-group-item">{{ employee }}</li>
+        {% endfor %}
+      </ul>
+      <br>
+      <hr>
+
+     <!-- using function based view --> {% include "pagination.html" with page=employees %}
+     {% comment %} using class based view  {% include "pagination.html" with page=page_obj %}  {% endcomment %}
+    </div>
+   
+
+  </body>
+</html>
