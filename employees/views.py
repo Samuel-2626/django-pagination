@@ -7,28 +7,26 @@ from django.views.generic import ListView
 
 def index(request):
     object_list = Employee.objects.all()
-    paginator = Paginator(object_list, 6) # 35 employees in each page
-    page = request.GET.get('page')
-    print(page)
+    page_num = request.GET.get('page', 1)
+
+    paginator = Paginator(object_list, 6) # 6 employees per page
+
+
     try:
-        employees = paginator.page(page)
+        page_obj = paginator.page(page_num)
     except PageNotAnInteger:
-        # if page is not an integer deliver the first page
-        employees = paginator.page(1)
+        # if page is not an integer, deliver the first page
+        page_obj = paginator.page(1)
     except EmptyPage:
-        # if the page is out of range deliver the last page
-        employees = paginator.page(paginator.num_pages)
+        # if the page is out of range, deliver the last page
+        page_obj = paginator.page(paginator.num_pages)
 
-    return render(request, 'index.html', {
-        'employees': employees,
-        'page': page
-    })
+    return render(request, 'index.html', {'page_obj': page_obj})
 
-    """ Using class-based view """
+""" Using class-based view """
 
 # class Index(ListView):
-
 #     model = Employee
 #     context_object_name = 'employees'
-#     paginate_by = 15
+#     paginate_by = 6
 #     template_name = 'index.html'

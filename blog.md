@@ -14,16 +14,16 @@ By the end of this article, you will be able to:
 
 1. Explain what pagination is and why you may want to use it.
 1. Work with Django's `Paginator` class and `Page` objects.
-1. Implement pagination in Django with unction and class-based views.
+1. Implement pagination in Django with function and class-based views.
 
 ## Django Constructs
 
-When implementing pagination in Django, rather that re-inventing the logic required for pagination, you'll work with the following constructs:
+When implementing pagination in Django, rather than re-inventing the logic required for pagination which could be a very tedious process, you'll work with the following constructs:
 
-1. [Paginator](https://docs.djangoproject.com/en/4.0/ref/paginator/#paginator-class) - splits a a Django QuerySet or list into chunks of `Page` objects.
-1. [Page] - holds the actual paginated data along with pagination metadata
+1. [Paginator](https://docs.djangoproject.com/en/4.0/ref/paginator/#paginator-class) - splits a Django QuerySet or list into chunks of `Page` objects.
+1. [Page](https://docs.djangoproject.com/en/4.0/ref/paginator/#page-class) - holds the actual paginated data along with pagination metadata.
 
-Let's look at a some quick examples.
+Let's look at some quick examples.
 
 ### Paginator
 
@@ -49,10 +49,10 @@ paginator = Paginator(users, 10)
 
 The `Paginator` class takes four parameters:
 
-1. `object_list` - any object with a `count()` or `__len__()` method, like a list, tuple, or QuerySet
-1. `per_page` - maximum number of items to include on a page
-1. `orphans` (optional) - TODO
-1. `allow_empty_first_page` (optional) - TODO
+1. `object_list` - any object with a `count()` or `__len__()` method, like a list, tuple, or QuerySet.
+1. `per_page` - maximum number of items to include on a page.
+1. `orphans` (optional) - can prevent the last page from having very few items. 
+1. `allow_empty_first_page` (optional) - as implied by the name you can raise an `EmtpyPage` error if you disallow the first page from being empty by setting the argument to `False`.
 
 So, in the above example, we sliced the users into pages (or chunks) of ten. The first four pages will have ten users while the last page will have three.
 
@@ -62,11 +62,62 @@ So, in the above example, we sliced the users into pages (or chunks) of ten. The
 1. `num_pages` - total number of pages
 1. `page_range` - range iterator of page numbers
 
-TODO: show example of how `orphans` works.
+> For consistent paginated results data, the QuerySet should be ordered or the model should be ordered.
+
+To see how the orphans parameter work using the example above, the last page by default will have three users in it. By passing the orphans argument, we can combine the content on the last page to that of the third page, thereby making the third page to be the last page as shown below:
+
+```python
+...
+paginator = Paginator(users, 10, 3) # new
+```
+
+The orphans parameter expects the number of content on the last page to be equal or less than it for all the content on the last page to be added to the previous page.
 
 ### Page
 
-TODO: show examples of working with page objects, making sure to talk about the `PageNotAnInteger` and `EmptyPage` exceptions
+```python
+from django.core.paginator import Paginator
+
+users = User.objects.all()
+
+paginator = Paginator(users, 10)
+
+page_obj = paginator.page(1)
+```
+
+After the Django QuerySet has been broken down into `Page` objects. We can then use the page method to access the data for each page by passing the page number. 
+
+The example above will give us the first ten users denoting the first page. Likewise, we can do this for subsequent pages.
+
+However, we could have an `EmptyPage` by going just one step further than the available pages. This will cause an error which we can then catch using the `EmptyPage` exception as shown below. Likewise, we could have a page that is not a number this also can be caught with the `PageNotAnInteger` exception.
+
+```python
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
+users = User.objects.all()
+
+paginator = Paginator(users, 10)
+
+try:
+    page_obj = paginator.page(1)
+except PageNotAnInteger:
+    # Do something
+    pass
+except EmptyPage:
+    # Do something
+    pass
+```
+
+> Note that we are not literally constructing a Page object, instead we are getting the Page object from the Paginator class by using the page method has recommended.
+
+The Page object has several [methods](https://docs.djangoproject.com/en/4.0/ref/paginator/#id1) and [attributes](https://docs.djangoproject.com/en/4.0/ref/paginator/#id2) that can be used while constructing your template. Here are a few which we'll be using in this article:
+
+1. `has_next()` - checks and if there is a next page returns True
+1. `has_previous()` - checks and if there is a previous page returns True
+1. `next_page_number()` - returns the number of the next page
+1. `previous_page_number()` - returns the number of the previous page
+1. `number` - this will show the page number for a page
+1. `paginator` - this will get the associated Paginator object
 
 ## Function-based Views
 
@@ -101,7 +152,7 @@ def index(request):
 Here, we:
 
 1. Defined a `page_num` variable from the URL.
-1. Instantiated the `Paginator` class passing it the required parameters, the `employees` QuerySet and number of employees to be included on each page.
+1. Instantiated the `Paginator` class passing it the required parameters, the `employees` QuerySet and the number of employees to be included on each page.
 1. Generated a page object called `page_obj`, which contains the paginated employee data along with metadata for navigating to previous and next pages.
 
 [https://github.com/Samuel-2626/django-pagination/blob/main/employees/views.py#L8](https://github.com/Samuel-2626/django-pagination/blob/main/employees/views.py#L8)
@@ -128,15 +179,15 @@ class Index(ListView):
 
 ## Templates
 
-Working with pagination in the template is where things start to get interesting, as there are a number of different implementations. In this article, we'll look at three different implementations, each showing a different way in which to navigate to previous and next pages.
+Working with pagination in the template is where things start to get interesting, as there are several different implementations. In this article, we'll look at three different implementations, each showing a different way in which to navigate to the previous and next pages.
 
 ### Flavor 1
 
 This is the first flavor implementing the pagination UI.
 
-![Pagination UI - first flavor](https://github.com/Samuel-2626/django-pagination/blob/main/img/Screenshot%20(3).png)
+![Pagination UI - first flavor](https://github.com/Samuel-2626/django-pagination/blob/main/img/1.png)
 
-So, in this example, we have "Previous" and "Next" links that the end user can click to move from page to page.
+So, in this example, we have "Previous" and "Next" links that the end-user can click to move from page to page.
 
 *index.html*:
 
@@ -186,75 +237,73 @@ So, in this example, we have "Previous" and "Next" links that the end user can c
 </div>
 ```
 
-Keep in mind that the *pagination.html* template can be reused across a number of templates.
+Keep in mind that the *pagination.html* template can be reused across many templates.
 
 ### Flavor 2
 
-![Pagination UI - second flavor](https://github.com/Samuel-2626/django-pagination/blob/main/img/Screenshot%20(2).png)
+![Pagination UI - second flavor](https://github.com/Samuel-2626/django-pagination/blob/main/img/2.png)
 
 *pagination.html*:
 
 ```html
-<ul class="pagination">
-  {% if page.has_previous %}
-    <li class="page-item"><a href="?page={{ page.previous_page_number }}" class="page-link">Previous</a></li>
+{% if page_obj.has_previous %}
+ <a href="?page={{ page_obj.previous_page_number }}" class="page-link">Previous</a>
   {% else %}
-    <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a></li>
+ <a class="page-link disabled">Previous</a>
   {% endif %}
 
-  {% for i in page.paginator.page_range %}
-    {% if page.number == i %}
-      <li class="page-item active" aria-current="page"><a class="page-link" href="#">{{ i }} </a></li>
+  {% for i in page_obj.paginator.page_range %}
+    {% if page_obj.number == i %}
+  <a class="page-link active" href="#">{{ i }} </a>
     {% else %}
-      <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+  <a class="page-link" href="?page={{ i }}">{{ i }}</a>
     {% endif %}
   {% endfor %}
 
-  {% if page.has_next %}
-    <li class="page-item"><a class="page-link" href="?page={{ page.next_page_number }}">Next</a></li>
+  {% if page_obj.has_next %}
+    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
   {% else %}
-    <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">Next</a></li>
-  {% endif %}
-</ul>
+    <a class="page-link disabled">Next</a>
+{% endif %}
 ```
 
 This flavor presents all the page numbers in the UI, making it easier to navigate to different pages.
 
 ### Flavor 3
 
-![Pagination UI - third flavor](https://github.com/Samuel-2626/django-pagination/blob/main/img/Screenshot%20(1).png)
+![Pagination UI - third flavor](https://github.com/Samuel-2626/django-pagination/blob/main/img/3.png)
 
 *pagination.html*:
 
 ```html
-{% if page.has_previous %}
-  <a class="btn btn-warning mb-4" href="?page={{ page.previous_page_number }}">« Previous page</a>
+{% if page_obj.has_previous %}
+  <a class="btn btn-warning mb-4" href="?page={{ page_obj.previous_page_number }}">« Previous page</a>
 
-  {% if page.number > 3 %}
+  {% if page_obj.number > 3 %}
     <a class="btn btn-outline-warning mb-4" href="?page=1">1</a>
-    {% if page.number > 4 %}
+    {% if page_obj.number > 4 %}
       <button class="btn btn-outline-warning mb-4" disabled="">...</button>
     {% endif %}
   {% endif %}
 {% endif %}
 
-{% for num in page.paginator.page_range %}
-  {% if page.number == num %}
+{% for num in page_obj.paginator.page_range %}
+  {% if page_obj.number == num %}
     <a class="btn btn-warning mb-4" href="?page={{ num }}">{{ num }}</a>
-  {% elif num > page.number|add:'-3' and num < page.number|add:'3' %}
+  {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
     <a class="btn btn-outline-warning mb-4" href="?page={{ num }}">{{ num }}</a>
   {% endif %}
 {% endfor %}
 
-{% if page.has_next %}
-  {% if page.number < page.paginator.num_pages|add:'-3' %}
+{% if page_obj.has_next %}
+  {% if page_obj.number < page_obj.paginator.num_pages|add:'-3' %}
     <button class="btn btn-outline-warning mb-4" disabled="">...</button>
-    <a class="btn btn-outline-warning mb-4" href="?page={{ page.paginator.num_pages }}">{{ page.paginator.num_pages }}</a>
-  {% elif page.number < page.paginator.num_pages|add:'-2' %}
-    <a class="btn btn-outline-warning mb-4" href="?page={{ page.paginator.num_pages }}">{{ page.paginator.num_pages }}</a>
+    <a class="btn btn-outline-warning mb-4" href="?page={{ page_obj.paginator.num_pages }}">{{ page_obj.paginator.num_pages }}</a>
+  {% elif page_obj.number < page_obj.paginator.num_pages|add:'-2' %}
+    <a class="btn btn-outline-warning mb-4" href="?page={{ page_obj.paginator.num_pages }}">{{ page_obj.paginator.num_pages }}</a>
   {% endif %}
 
-  <a class="btn btn-warning mb-4" href="?page={{ page.next_page_number }}">Next Page »</a>
+  <a class="btn btn-warning mb-4" href="?page={{ page_obj.next_page_number }}">Next Page »</a>
 {% endif %}
 ```
 
@@ -262,7 +311,7 @@ If you have a large number of pages, you may want to look at this third and fina
 
 ## Testing
 
-TODO: show how to test with pytest
+Using the test client which acts as a dummy web browser, we can simulate GET requests on the `employees` URL and observe the response.
 
 ## Conclusion
 
