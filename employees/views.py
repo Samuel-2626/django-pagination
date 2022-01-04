@@ -11,7 +11,6 @@ def index(request):
 
     paginator = Paginator(object_list, 6) # 6 employees per page
 
-
     try:
         page_obj = paginator.page(page_num)
     except PageNotAnInteger:

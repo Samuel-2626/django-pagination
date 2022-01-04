@@ -137,7 +137,20 @@ except EmptyPage:
 
 You may want to catch a `PageNotAnInteger` exception as well. For more on this, review the [Exceptions](https://docs.djangoproject.com/en/4.0/ref/paginator/#exceptions) section from the Paginator documentation.
 
-TODO: show an example of using `paginator.get_page(1)` and explain why you may want to use it over `paginator.page(1)`.
+However, instead of catching the `EmptyPage` and `PageNotAnInteger` ourselves using the `try` and `except` keywords. We could use another method that will also create for us a `Page` object. This is the [get_page](https://docs.djangoproject.com/en/4.0/ref/paginator/#django.core.paginator.Paginator.get_page) method.
+
+```python
+from django.core.paginator import Paginator
+
+users = User.objects.all()
+
+paginator = Paginator(users, 10)
+page_obj = paginator.get_page(99) # new
+```
+
+Using this over the `page` method to create a `Page` object save us the time from explicitly catching any exception ourselves. As shown in the example above, even though the number `99` is beyond the range, it will by default return the last page. Also, if the page isn't a valid number it returns by default the first page.
+
+Therefore, both methods can be used it does depend on your preferences. But for the examples shown in this article, we'll be using the `page` method and state out the exceptions explicitly.
 
 The `Page` object has several [attributes](https://docs.djangoproject.com/en/4.0/ref/paginator/#id2) and [methods](https://docs.djangoproject.com/en/4.0/ref/paginator/#id1) that can be used while constructing your template:
 
