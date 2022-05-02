@@ -2,7 +2,7 @@
 
 ## Want to learn how to build this?
 
-Check out the [post]().
+Check out the [post](https://testdriven.io/blog/django-pagination/).
 
 ## Want to use this project?
 
